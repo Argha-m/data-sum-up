@@ -35,6 +35,7 @@ const dateFormat = (date) => {
   return newDate;
 };
 
+//Change keys of object
 const changeKeys = (item) => {
   let result = {};
   for (const [key, value] of Object.entries(item)) {
@@ -82,48 +83,84 @@ const duplicateDateMerge = (array) => {
   return newArr;
 };
 
+// Upload an Excel or CSV file and display its summary in the table.
 function uploadFile() {
   const fileInput = document.getElementById("excelFile");
   const file = fileInput.files && fileInput.files[0];
 
   if (!file) {
-    alert("Please select an Excel file first.");
+    alert("Please select an Excel or CSV file first.");
     return;
   }
 
+  const fileExtension = file.name.split(".").pop().toLowerCase();
+  if (!["csv", "xls", "xlsx"].includes(fileExtension)) {
+    alert("Please select a valid Excel or CSV file.");
+    return;
+  }
+
+  const uploadButton = document.getElementById("uploadBtn");
+  const originalButtonContent = uploadButton.innerHTML;
+  uploadButton.disabled = true;
+  uploadButton.innerHTML =
+    '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Loading...';
+
+  const finishUpload = () => {
+    setTimeout(() => {
+      uploadButton.disabled = false;
+      uploadButton.innerHTML = originalButtonContent;
+    }, 2000);
+  };
+
   const reader = new FileReader();
-
   reader.onload = function (event) {
-    const data = new Uint8Array(event.target.result);
-    const workbook = XLSX.read(data, { type: "array" });
-    const firstSheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[firstSheetName];
-    const jsonData = XLSX.utils.sheet_to_json(worksheet, {
-      defval: "",
-      raw: false,
-    });
-    const uniqueData = duplicateDateMerge(jsonData);
+    try {
+      const data = new Uint8Array(event.target.result);
+      const workbook = XLSX.read(data, {
+        type: "array",
+        cellDates: true,
+      });
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+        defval: "",
+        raw: false,
+      });
+      const uniqueData = duplicateDateMerge(jsonData);
+      setTimeout(() => {
+        document.querySelector(".data-summary-row").style.display = "flex";
 
-    document.querySelector(".data-summary-row").style.display = "flex";
+        const tableBody = document.getElementById("dataTableBody");
+        tableBody.innerHTML = "";
+        uniqueData.forEach((item) => {
+          const row = tableBody.insertRow();
+          const dateCell = row.insertCell(0);
+          const downloadCell = row.insertCell(1);
+          const uploadCell = row.insertCell(2);
+          const sessionTimeCell = row.insertCell(3);
+          dateCell.textContent = item.logintime;
+          downloadCell.textContent = item.download;
+          uploadCell.textContent = item.upload;
+          sessionTimeCell.textContent = item.sessiontime;
+        });
+      }, 2000);
+    } catch (error) {
+      alert("The selected file could not be processed.");
+    } finally {
+      finishUpload();
+    }
+  };
 
-    const tableBody = document.getElementById("dataTableBody");
-    tableBody.innerHTML = "";
-    uniqueData.forEach((item) => {
-      const row = tableBody.insertRow();
-      const dateCell = row.insertCell(0);
-      const downloadCell = row.insertCell(1);
-      const uploadCell = row.insertCell(2);
-      const sessionTimeCell = row.insertCell(3);
-      dateCell.textContent = item.logintime;
-      downloadCell.textContent = item.download;
-      uploadCell.textContent = item.upload;
-      sessionTimeCell.textContent = item.sessiontime;
-    });
+  reader.onerror = function () {
+    uploadButton.disabled = false;
+    uploadButton.innerHTML = originalButtonContent;
+    alert("The selected file could not be read.");
   };
 
   reader.readAsArrayBuffer(file);
 }
 
+//Download summary data as Excel file
 function downloadSummary() {
   const tableBody = document.getElementById("dataTableBody");
 
@@ -160,4 +197,12 @@ function downloadSummary() {
   XLSX.utils.book_append_sheet(workbook, worksheet, "Summary");
 
   XLSX.writeFile(workbook, "data-summary.xlsx");
+}
+
+function clearFile() {
+  const fileInput = document.getElementById("excelFile");
+  fileInput.value = "";
+  const tableBody = document.getElementById("dataTableBody");
+  tableBody.innerHTML = "";
+  document.querySelector(".data-summary-row").style.display = "none";
 }
