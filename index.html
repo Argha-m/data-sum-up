@@ -21,12 +21,12 @@
           <div class="card shadow-sm border-dashed border-dark rounded-3">
             <div class="card-body p-4">
               <h2 class="card-title mb-4 text-center fw-semibold">
-                Upload Excel File
+                Upload Data File
               </h2>
 
               <div class="mb-3">
                 <label for="excelFile" class="form-label"
-                  >Choose an Excel file</label
+                  >Choose an Excel or CSV file</label
                 >
                 <input
                   class="form-control form-control-lg"
@@ -36,14 +36,24 @@
                 />
               </div>
 
-              <div class="d-grid">
+              <div class="d-grid gap-2 d-md-flex">
                 <button
                   class="btn btn-primary btn-lg"
                   type="button"
+                  id="uploadBtn"
                   onclick="uploadFile()"
                 >
                   <i class="bi bi-upload me-2"></i>
                   Upload
+                </button>
+                <button
+                  class="btn btn-primary btn-lg"
+                  type="button"
+                  id="clearBtn"
+                  onclick="clearFile()"
+                >
+                  <i class="bi bi-trash me-2"></i>
+                  Clear
                 </button>
               </div>
             </div>
