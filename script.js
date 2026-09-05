@@ -169,6 +169,12 @@ function downloadSummary() {
     return;
   }
 
+  const downloadButton = document.getElementById("downloadSummaryBtn");
+  const originalButtonContent = downloadButton.innerHTML;
+  downloadButton.disabled = true;
+  downloadButton.innerHTML =
+    '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Loading...';
+
   const rows = [];
   const headers = ["Date", "Download", "Upload", "Session Time"];
   rows.push(headers);
@@ -196,7 +202,11 @@ function downloadSummary() {
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Summary");
 
-  XLSX.writeFile(workbook, "data-summary.xlsx");
+  setTimeout(() => {
+    XLSX.writeFile(workbook, "data-summary.xlsx");
+    downloadButton.disabled = false;
+    downloadButton.innerHTML = originalButtonContent;
+  }, 2000);
 }
 
 function clearFile() {
